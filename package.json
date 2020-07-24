@@ -1,0 +1,22 @@
+{
+  "name": "shooting-game",
+  "version": "1.0.0",
+  "description": "shooting game made by dend",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "",
+  "keywords": [
+    "Electron",
+    "quick",
+    "start",
+    "tutorial",
+    "demo"
+  ],
+  "author": "Dend",
+  "license": "",
+  "devDependencies": {
+    "electron": "^9.1.1"
+  }
+}
