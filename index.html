@@ -3,9 +3,315 @@
   <head>
     <meta charset="UTF-8">
     <title>Shooting Game by Dend</title>
+    <link rel="stylesheet" href="css/bootstrap.css"/>
+    <style>
+      canvas{
+        border: 1px solid green;
+        width: 100%;
+        height: 100%;
+      }
+      .progress{
+        width: 800px;
+      }
+      .progress-bar{
+        width: 100%;
+        color: blueviolet;
+      }
+    </style>
   </head>
   <body>
-    <h1>슈팅게임</h1>
-    <script src="./renderer.js"></script>
+  <p>남은 시간 : <strong id="remainTime">60</strong> 초</p>
+  <div class="progress">
+    <div class="progress-bar"></div>
+  </div>
+  <canvas id="myCanvas" width="800" height="500"></canvas>
+  <script src="js/jquery-3.3.1.js"></script>
+  <script>
+    var canvas=document.querySelector("#myCanvas");
+    var context=canvas.getContext("2d");
+    //배경 이미지 로딩하기
+    var backImg=new Image();
+    backImg.src="images/background.jpg";
+    //토끼 이미지 두개 로딩해서 배열에 담기
+    var rabbit1=new Image();
+    var rabbit2=new Image();
+    rabbit1.src="images/kimch1.png";
+    rabbit2.src="images/kimch2.png";
+    var rabbitImgs=[rabbit1, rabbit2];
+    //토끼의 좌표
+    var rabbitX=400, rabbitY=250;
+    //토끼 이미지 인덱스
+    var rabbitIndex=0;
+    //카운트를 셀 변수
+    var count=0;
+    //스나이프 이미지 로딩하기
+    var snipeImg=new Image();
+    snipeImg.src="images/snipe.png";
+    //스나이프의 좌표
+    var snipeX=0, snipeY=0;
+    //총알 구멍 이미지 로딩
+    var holeImg=new Image();
+    holeImg.src="images/hole.png";
+    //총알 구멍 좌표(plain object)를 누적시킬 배열
+    var holes=[];
+    //총소리 로딩하기
+    var fireSound=new Audio("sounds/fire.wav");
+    //비명소리 로딩하기
+    var screamSound=new Audio("sounds/birddie.mp3");
+    //토끼 파편 정보를 담을 배열
+    var fragments=[];
+  
+    //파편 이미지를 저장할 배열
+    var fragImgs=[];
+    //토끼 파편 이미지 로딩
+    for(var i=0; i<5; i++){
+      var tmp=new Image();
+      tmp.src="images/r"+i+".png";
+      fragImgs.push(tmp);
+    }
+    //피 이미지를 저장할 배열
+    var bloodImgs=[];
+    for(var i=0; i<6; i++){
+      var tmp=new Image();
+      tmp.src="images/blood"+i+".png";
+      bloodImgs.push(tmp);
+    }
+    //피의 위치를 저장할 변수
+    var bloodX=0, bloodY=0;
+    //피 애니메이션이 진행중인지 여부
+    var isBlood=false;
+    //피의 현재 이미지 인덱스
+    var bloodIndex=0;
+  
+    //총의 반동값을 저장할 변수
+    var banY=0;
+    //총의 발사 준비 여부
+    var isReady=true;
+    //총의 장전소리 로딩
+    var jangSound=new Audio("sounds/jang.wav");
+    //토기가 움직이는 빈도수를 관리할 변수
+    var level=100;
+    //점수를 저장할 변수
+    var point=0;
+    //글자를 출력하기 위한 준비 작업
+    context.font="20px consolas";
+    context.fillStyle="yellow";
+    //남은 시간을 저장할 변수
+    var remainTime=60;
+  
+    setInterval(function(){
+      //남은 시간을 줄이고
+      remainTime--;
+      //남은 시간을 출력한다.
+      $("#remainTime").text(remainTime);
+    }, 1000);
+  
+    setInterval(function(){
+      //배경이미지 그리기
+      context.drawImage(backImg, 0, 0, 800, 500);
+      //점수 출력
+      context.fillText("점수 : "+point, 10, 20);
+  
+      //반복문 돌면서 총알 구멍 이미지 그리기
+      for(var i=0; i<holes.length; i++){
+        // i번째 방에 있는 총알 구멍 정보 object 를 얻어온다.
+        var tmp=holes[i];
+        //tmp 에 있는 좌표를 이용해서 총알 구멍 그리기
+        context.drawImage(holeImg, tmp.x-10, tmp.y-10, 20, 20);
+      }
+      //토끼 파편 이미지 그리기
+      for(var i=0; i<fragments.length; i++){
+        var tmp=fragments[i];
+        //context 의 현재 상태를 저장(조작하지 않은 정상상태)
+        context.save();
+        //context 를 파편이 위치해야 하는곳으로 평행이동
+        context.translate(tmp.x, tmp.y);
+        //context 를 파편이 회전해야 하는 각만큼 회전
+        context.rotate(tmp.angle);
+        //파편을 원점에 그린다.
+        context.drawImage(fragImgs[tmp.index], -50, -50, 100, 100);
+        //다음번 작업을 위해서 context를 저장된 상태로 되돌리기
+        context.restore();
+      }
+  
+      //토끼 이미지 그리기
+      context.drawImage(rabbitImgs[rabbitIndex], rabbitX-50, rabbitY-50, 100, 100);
+      //피 그리기
+      if(isBlood){
+        context.drawImage(bloodImgs[bloodIndex],
+          bloodX-50, bloodY-50, 100, 100);
+      }
+  
+      //스나이프 이미지 그리기
+      context.drawImage(snipeImg, snipeX-50, snipeY-50-banY, 100, 100);
+  
+      //카운트를 1 증가 시킨다.
+      count++;
+      //토끼 애니메이션
+      rabbitAni();
+      //파편 움직이는 함수 호출
+      moveFragment();
+      //화면을 벗어난 파편은 제거하는 함수 호출
+      checkFragment();
+      //반동 애니메이션 처리
+      banAni();
+      //피 애니메이션 처리
+      bloodAni();
+      //토끼 움직이기
+      moveRabbit();
+    }, 10);
+  
+    function moveRabbit(){
+      if(count%level != 0){
+        return;
+      }
+      //토끼를 랜덤한 위치로 옴긴다.
+      rabbitX=Math.random()*800;
+      rabbitY=Math.random()*500;
+    }
+  
+    function bloodAni(){
+      if(isBlood==false){
+        return;
+      }
+      if(count%10 == 0){
+        bloodIndex++;
+        if(bloodIndex==6){
+          bloodIndex=0;
+          isBlood=false;
+        }
+      }
+    }
+  
+    function banAni(){
+      if(isReady){//총을 쏠 준비가 되어 있으면
+        return; //함수를 여기서 끝내라
+      }
+      //반동값을 1씩 감소 시킨다.
+      banY -= 1;
+      if(banY == 0 ){//반동값이 0 이되면
+        //총을 쏠수 있는 상태로 바꿔주고
+        isReady=true;
+        //효과음을 재생한다.
+        jangSound.currentTime=0;
+        jangSound.play();
+      }
+    }
+  
+  
+    function checkFragment(){
+      //배열의 마지막번째 방번호 부터 시작해서 방번호를 1씩 감소
+      //시키면서 반복문을 수행한다.
+      for(var i=fragments.length-1 ; i>=0 ; i--){
+        //i 번째 파편 객체를 불러와서
+        var tmp=fragments[i];
+        //만일 화면을 벗어난 파편 객체이면
+        if(tmp.isOut){
+          //배열의 i 번째 방에서 부터 1개를 제거한다.
+          fragments.splice(i, 1);
+        }
+      }
+    }
+  
+    //파편을 움직이는 함수
+    function moveFragment(){
+      //반복문 돌면서
+      for(var i=0; i<fragments.length; i++){
+        //i번째 파편 정보를 불러와서
+        var tmp=fragments[i];
+        //speedX 값 만큼 파편의 x 좌표를 변화 시키고
+        tmp.x = tmp.x + tmp.speedX;
+        //speedY 값 만큼 파편의 y 좌표를 변화 시킨다.
+        tmp.y = tmp.y + tmp.speedY;
+        //angleSpeed 만큼 angle 를 변화 시킨다.
+        tmp.angle = tmp.angle + tmp.angleSpeed;
+        //화면을 벗어났는지 여부를 체크한다.
+        tmp.isOut = tmp.x > 850 ||
+              tmp.x < -50 ||
+              tmp.y > 550 ||
+              tmp.y < -50;
+      }
+    }
+  
+    function rabbitAni(){
+      if(count%20 == 0){
+        rabbitIndex++;
+        if(rabbitIndex==2){
+          rabbitIndex=0;
+        }
+      }
+    }
+    //mousemove 이벤트 처리
+    $("#myCanvas").on("mousemove", function(e){
+      //마우스의 좌표를 스나이프의 좌표에 반영한다.
+      snipeX=e.offsetX;
+      snipeY=e.offsetY;
+    });
+  
+    //mousedown 이벤트 처리
+    $("#myCanvas").on("mousedown", function(e){
+  
+      if(isReady == false){//총을 쏠 준비가 되지 않았으면
+        return;//함수를 여기서 끝내라
+      }
+      //총의 준비 상태를 바꿔준다.
+      isReady=false;
+  
+      //스나이프의 반동값 부여하기
+      banY=50;
+  
+      //총알 구멍의 좌표를 담을 object
+      var obj={};
+      // x, y 라는 방에 x 좌표와 y 좌표를 담는다.
+      obj.x=e.offsetX;
+      obj.y=e.offsetY;
+      //배열에 누적 시키기
+      holes.push(obj);
+      //총소리 내기
+      fireSound.currentTime=0;
+      fireSound.play();
+      //토끼가 총에 맞았는지 여부
+      var isRabbitDie = e.offsetX > rabbitX-50 &&
+                e.offsetX < rabbitX+50 &&
+                        e.offsetY > rabbitY-50 &&
+                        e.offsetY < rabbitY+50;
+      //만일 토끼가 총에 맞았으면
+      if(isRabbitDie){
+        //1. 비명을 지르고
+        screamSound.currentTime=0;
+        screamSound.play();
+        //2. 토끼 파편을 만든다(파편정보를 object 에 담아서 배열에 저장)
+        for(var i=0; i<5; i++){
+          var frag={};
+          frag.index=i; //파편의 종류
+          frag.x=rabbitX; //파편의 초기 x 좌표
+          frag.y=rabbitY; //파편의 초기 y 좌표
+          frag.speedX=Math.random()*20-10; // -10~10 사이의 실수
+          frag.speedY=Math.random()*20-10; // -10~10 사이의 실수
+          frag.isOut=false;//화면을 벗어 낫는지 여부
+          frag.angle=0; //회전 각도
+          frag.angleSpeed=Math.random()-0.5; //회전 각속도
+          //배열에 저장
+          fragments.push(frag);
+        }
+  
+  
+        //3. 토끼의 위치를 렌덤한 곳으로 다시 부여한다.
+        rabbitX = Math.random()*800;
+        rabbitY = Math.random()*500;
+  
+        //4. 피 애니메니션 시작 ㅜㅜ
+        bloodX=e.offsetX;
+        bloodY=e.offsetY;
+        isBlood=true;
+        //5. level 을 줄여서 토끼가 더 빨리 움직이게 한다.
+        level--;
+        //6. 점수 올리기
+        point++;
+      }
+    });
+  
+  </script>
   </body>
-</html>
+  </html>
+  

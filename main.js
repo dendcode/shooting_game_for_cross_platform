@@ -5,8 +5,8 @@ const path = require('path')
 function createWindow () {
   // 새로운 브라우저 창 생성
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 840,
+    height: 640,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
     }
