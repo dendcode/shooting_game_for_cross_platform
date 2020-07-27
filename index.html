@@ -7,8 +7,6 @@
     <style>
       canvas{
         border: 1px solid green;
-        width: 100%;
-        height: 100%;
       }
       .progress{
         width: 800px;
@@ -32,15 +30,15 @@
     //배경 이미지 로딩하기
     var backImg=new Image();
     backImg.src="images/background.jpg";
-    //토끼 이미지 두개 로딩해서 배열에 담기
+    //캐릭터 이미지 두개 로딩해서 배열에 담기
     var rabbit1=new Image();
     var rabbit2=new Image();
     rabbit1.src="images/kimch1.png";
     rabbit2.src="images/kimch2.png";
     var rabbitImgs=[rabbit1, rabbit2];
-    //토끼의 좌표
+    //캐릭터의 좌표
     var rabbitX=400, rabbitY=250;
-    //토끼 이미지 인덱스
+    //캐릭터 이미지 인덱스
     var rabbitIndex=0;
     //카운트를 셀 변수
     var count=0;
@@ -58,12 +56,12 @@
     var fireSound=new Audio("sounds/fire.wav");
     //비명소리 로딩하기
     var screamSound=new Audio("sounds/birddie.mp3");
-    //토끼 파편 정보를 담을 배열
+    //캐릭터 파편 정보를 담을 배열
     var fragments=[];
   
     //파편 이미지를 저장할 배열
     var fragImgs=[];
-    //토끼 파편 이미지 로딩
+    //캐릭터 파편 이미지 로딩
     for(var i=0; i<5; i++){
       var tmp=new Image();
       tmp.src="images/r"+i+".png";
@@ -119,7 +117,7 @@
         //tmp 에 있는 좌표를 이용해서 총알 구멍 그리기
         context.drawImage(holeImg, tmp.x-10, tmp.y-10, 20, 20);
       }
-      //토끼 파편 이미지 그리기
+      //캐릭터 파편 이미지 그리기
       for(var i=0; i<fragments.length; i++){
         var tmp=fragments[i];
         //context 의 현재 상태를 저장(조작하지 않은 정상상태)
@@ -134,7 +132,7 @@
         context.restore();
       }
   
-      //토끼 이미지 그리기
+      //캐릭터 이미지 그리기
       context.drawImage(rabbitImgs[rabbitIndex], rabbitX-50, rabbitY-50, 100, 100);
       //피 그리기
       if(isBlood){
@@ -147,7 +145,7 @@
   
       //카운트를 1 증가 시킨다.
       count++;
-      //토끼 애니메이션
+      //캐릭터 애니메이션
       rabbitAni();
       //파편 움직이는 함수 호출
       moveFragment();
@@ -157,7 +155,7 @@
       banAni();
       //피 애니메이션 처리
       bloodAni();
-      //토끼 움직이기
+      //캐릭터 움직이기
       moveRabbit();
     }, 10);
   
@@ -165,7 +163,7 @@
       if(count%level != 0){
         return;
       }
-      //토끼를 랜덤한 위치로 옴긴다.
+      //캐릭터를 랜덤한 위치로 옴긴다.
       rabbitX=Math.random()*800;
       rabbitY=Math.random()*500;
     }
@@ -270,17 +268,17 @@
       //총소리 내기
       fireSound.currentTime=0;
       fireSound.play();
-      //토끼가 총에 맞았는지 여부
+      //캐릭터가 총에 맞았는지 여부
       var isRabbitDie = e.offsetX > rabbitX-50 &&
                 e.offsetX < rabbitX+50 &&
                         e.offsetY > rabbitY-50 &&
                         e.offsetY < rabbitY+50;
-      //만일 토끼가 총에 맞았으면
+      //만일 캐릭터가 총에 맞았으면
       if(isRabbitDie){
         //1. 비명을 지르고
         screamSound.currentTime=0;
         screamSound.play();
-        //2. 토끼 파편을 만든다(파편정보를 object 에 담아서 배열에 저장)
+        //2. 캐릭터 파편을 만든다(파편정보를 object 에 담아서 배열에 저장)
         for(var i=0; i<5; i++){
           var frag={};
           frag.index=i; //파편의 종류
@@ -296,7 +294,7 @@
         }
   
   
-        //3. 토끼의 위치를 렌덤한 곳으로 다시 부여한다.
+        //3. 캐릭터의 위치를 렌덤한 곳으로 다시 부여한다.
         rabbitX = Math.random()*800;
         rabbitY = Math.random()*500;
   
@@ -304,7 +302,7 @@
         bloodX=e.offsetX;
         bloodY=e.offsetY;
         isBlood=true;
-        //5. level 을 줄여서 토끼가 더 빨리 움직이게 한다.
+        //5. level 을 줄여서 캐릭터가 더 빨리 움직이게 한다.
         level--;
         //6. 점수 올리기
         point++;
